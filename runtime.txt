@@ -1,0 +1,2 @@
+# Vercel Runtime Configuration
+python-3.9

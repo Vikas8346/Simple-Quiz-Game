@@ -10,7 +10,7 @@ from datetime import datetime
 import google.generativeai as genai
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here-change-in-production'
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
 
 class QuizGame:
     def __init__(self):
@@ -22,14 +22,17 @@ class QuizGame:
     def setup_gemini_api(self):
         """Setup Google Gemini API"""
         try:
-            if os.path.exists("config.json"):
+            # Try to load API key from environment variable first, then config file
+            self.api_key = os.environ.get('GEMINI_API_KEY')
+            
+            if not self.api_key and os.path.exists("config.json"):
                 with open("config.json", 'r') as f:
                     config = json.load(f)
                     self.api_key = config.get("gemini_api_key")
             
             if self.api_key:
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
         except Exception as e:
             print(f"Error setting up Gemini API: {e}")
             self.model = None
