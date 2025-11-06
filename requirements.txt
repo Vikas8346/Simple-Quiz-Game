@@ -1,0 +1,10 @@
+# Python Dependencies for Quiz Game
+
+# Google Generative AI library for Gemini API integration
+google-generativeai>=0.3.0
+
+# Standard library modules (no installation needed):
+# - json
+# - random
+# - os
+# - datetime
