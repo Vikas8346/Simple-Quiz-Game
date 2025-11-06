@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .menu, .quiz-section, .result-section, .high-scores-section {
+            display: none;
+        }
+
+        .menu.active, .quiz-section.active, .result-section.active, .high-scores-section.active {
+            display: block;
+        }
+
+        .menu-buttons {
+            display: grid;
+            gap: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .question-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .question-text {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .options {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option {
+            padding: 15px 20px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .option:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+        }
+
+        .option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .option.correct {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        .option.incorrect {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .score-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .score-number {
+            font-size: 4em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .feedback {
+            font-size: 1.5em;
+            text-align: center;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        .high-scores-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .high-score-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rank {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            width: 40px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .back-button {
+            background: #6c757d;
+            margin-top: 20px;
+        }
+
+        .ai-badge {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Quiz Game</h1>
+
+        <!-- Main Menu -->
+        <div class="menu active">
+            <div class="menu-buttons">
+                <button onclick="showDefaultQuiz()">Play Quiz (Default Questions)</button>
+                <button onclick="showCustomQuiz()" id="customQuizBtn">Play Custom Quiz (AI-Generated) 🤖</button>
+                <button onclick="showHighScores()">View High Scores</button>
+            </div>
+        </div>
+
+        <!-- Default Quiz Setup -->
+        <div id="defaultQuizSetup" style="display: none;">
+            <div class="input-group">
+                <label for="playerName">Enter your name:</label>
+                <input type="text" id="playerName" placeholder="Your name" value="Player">
+            </div>
+            <button onclick="startDefaultQuiz()">Start Quiz</button>
+            <button class="back-button" onclick="showMenu()">Back to Menu</button>
+        </div>
+
+        <!-- Custom Quiz Setup -->
+        <div id="customQuizSetup" style="display: none;">
+            <div class="input-group">
+                <label for="customPlayerName">Enter your name:</label>
+                <input type="text" id="customPlayerName" placeholder="Your name" value="Player">
+            </div>
+            <div class="input-group">
+                <label for="quizTopic">Quiz Topic:</label>
+                <input type="text" id="quizTopic" placeholder="e.g., Python Programming, World History, Science">
+            </div>
+            <div class="input-group">
+                <label for="numQuestions">Number of Questions:</label>
+                <select id="numQuestions">
+                    <option value="5">5 Questions</option>
+                    <option value="10">10 Questions</option>
+                    <option value="15">15 Questions</option>
+                    <option value="20">20 Questions</option>
+                </select>
+            </div>
+            <button onclick="startCustomQuiz()">Generate & Start Quiz</button>
+            <button class="back-button" onclick="showMenu()">Back to Menu</button>
+        </div>
+
+        <!-- Quiz Section -->
+        <div class="quiz-section">
+            <div class="question-card">
+                <div class="question-header">
+                    <span id="questionNumber">Question 1/10</span>
+                    <span id="currentScore">Score: 0</span>
+                </div>
+                <div class="question-text" id="questionText"></div>
+                <div class="options" id="optionsContainer"></div>
+            </div>
+            <button id="submitBtn" onclick="submitAnswer()" style="display: none;">Submit Answer</button>
+            <button id="nextBtn" onclick="nextQuestion()" style="display: none;">Next Question</button>
+        </div>
+
+        <!-- Result Section -->
+        <div class="result-section">
+            <div class="score-display">
+                <div class="score-number" id="finalScore">0/10</div>
+                <div style="font-size: 1.5em; color: #666;" id="percentage">0%</div>
+            </div>
+            <div class="feedback" id="feedback"></div>
+            <button onclick="showMenu()">Back to Menu</button>
+            <button onclick="showHighScores()">View High Scores</button>
+        </div>
+
+        <!-- High Scores Section -->
+        <div class="high-scores-section">
+            <h2 style="text-align: center; margin-bottom: 20px;">🏆 High Scores</h2>
+            <ul class="high-scores-list" id="highScoresList"></ul>
+            <button class="back-button" onclick="showMenu()">Back to Menu</button>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" style="display: none;">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Generating questions...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestionIndex = 0;
+        let selectedAnswer = -1;
+        let totalQuestions = 0;
+        let playerName = '';
+
+        // Check AI availability on load
+        async function checkAIStatus() {
+            try {
+                const response = await fetch('/check-ai-status');
+                const data = await response.json();
+                if (!data.available) {
+                    document.getElementById('customQuizBtn').innerHTML = 'Play Custom Quiz (AI Not Configured) ⚠️';
+                }
+            } catch (error) {
+                console.error('Error checking AI status:', error);
+            }
+        }
+
+        checkAIStatus();
+
+        function showMenu() {
+            document.querySelector('.menu').classList.add('active');
+            document.getElementById('defaultQuizSetup').style.display = 'none';
+            document.getElementById('customQuizSetup').style.display = 'none';
+            document.querySelector('.quiz-section').classList.remove('active');
+            document.querySelector('.result-section').classList.remove('active');
+            document.querySelector('.high-scores-section').classList.remove('active');
+        }
+
+        function showDefaultQuiz() {
+            document.querySelector('.menu').classList.remove('active');
+            document.getElementById('defaultQuizSetup').style.display = 'block';
+        }
+
+        function showCustomQuiz() {
+            document.querySelector('.menu').classList.remove('active');
+            document.getElementById('customQuizSetup').style.display = 'block';
+        }
+
+        async function startDefaultQuiz() {
+            playerName = document.getElementById('playerName').value || 'Player';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('defaultQuizSetup').style.display = 'none';
+
+            try {
+                const response = await fetch('/start-quiz', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({type: 'default'})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    totalQuestions = data.total_questions;
+                    currentQuestionIndex = 0;
+                    document.getElementById('loading').style.display = 'none';
+                    document.querySelector('.quiz-section').classList.add('active');
+                    loadQuestion();
+                }
+            } catch (error) {
+                alert('Error starting quiz: ' + error);
+                showMenu();
+            }
+        }
+
+        async function startCustomQuiz() {
+            const topic = document.getElementById('quizTopic').value;
+            const numQuestions = document.getElementById('numQuestions').value;
+            playerName = document.getElementById('customPlayerName').value || 'Player';
+
+            if (!topic) {
+                alert('Please enter a topic!');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('customQuizSetup').style.display = 'none';
+
+            try {
+                const response = await fetch('/start-quiz', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        type: 'custom',
+                        topic: topic,
+                        num_questions: numQuestions
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    totalQuestions = data.total_questions;
+                    currentQuestionIndex = 0;
+                    document.getElementById('loading').style.display = 'none';
+                    document.querySelector('.quiz-section').classList.add('active');
+                    loadQuestion();
+                } else {
+                    alert('Error: ' + data.error);
+                    showMenu();
+                }
+            } catch (error) {
+                alert('Error starting quiz: ' + error);
+                showMenu();
+            }
+        }
+
+        async function loadQuestion() {
+            try {
+                const response = await fetch('/get-question');
+                const data = await response.json();
+
+                if (data.done) {
+                    finishQuiz();
+                    return;
+                }
+
+                document.getElementById('questionNumber').textContent = 
+                    `Question ${data.question_number}/${data.total_questions}`;
+                document.getElementById('questionText').textContent = data.question;
+
+                const optionsContainer = document.getElementById('optionsContainer');
+                optionsContainer.innerHTML = '';
+                
+                data.options.forEach((option, index) => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'option';
+                    optionDiv.textContent = option;
+                    optionDiv.onclick = () => selectOption(index);
+                    optionsContainer.appendChild(optionDiv);
+                });
+
+                selectedAnswer = -1;
+                document.getElementById('submitBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'none';
+            } catch (error) {
+                alert('Error loading question: ' + error);
+            }
+        }
+
+        function selectOption(index) {
+            selectedAnswer = index;
+            const options = document.querySelectorAll('.option');
+            options.forEach((opt, i) => {
+                opt.classList.remove('selected');
+                if (i === index) {
+                    opt.classList.add('selected');
+                }
+            });
+            document.getElementById('submitBtn').style.display = 'block';
+        }
+
+        async function submitAnswer() {
+            if (selectedAnswer === -1) return;
+
+            try {
+                const response = await fetch('/submit-answer', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({answer: selectedAnswer})
+                });
+                const data = await response.json();
+
+                const options = document.querySelectorAll('.option');
+                options.forEach((opt, i) => {
+                    opt.onclick = null;
+                    if (i === data.correct_answer) {
+                        opt.classList.add('correct');
+                    } else if (i === selectedAnswer && !data.correct) {
+                        opt.classList.add('incorrect');
+                    }
+                });
+
+                document.getElementById('currentScore').textContent = `Score: ${data.score}`;
+                document.getElementById('submitBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'block';
+            } catch (error) {
+                alert('Error submitting answer: ' + error);
+            }
+        }
+
+        function nextQuestion() {
+            loadQuestion();
+        }
+
+        async function finishQuiz() {
+            try {
+                const response = await fetch('/finish-quiz', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: playerName})
+                });
+                const data = await response.json();
+
+                document.querySelector('.quiz-section').classList.remove('active');
+                document.querySelector('.result-section').classList.add('active');
+                
+                document.getElementById('finalScore').textContent = `${data.score}/${data.total}`;
+                document.getElementById('percentage').textContent = `${data.percentage}%`;
+                document.getElementById('feedback').textContent = data.feedback;
+            } catch (error) {
+                alert('Error finishing quiz: ' + error);
+            }
+        }
+
+        async function showHighScores() {
+            document.querySelector('.menu').classList.remove('active');
+            document.querySelector('.result-section').classList.remove('active');
+            document.querySelector('.high-scores-section').classList.add('active');
+
+            try {
+                const response = await fetch('/high-scores');
+                const scores = await response.json();
+
+                const list = document.getElementById('highScoresList');
+                list.innerHTML = '';
+
+                if (scores.length === 0) {
+                    list.innerHTML = '<li class="high-score-item">No high scores yet!</li>';
+                } else {
+                    scores.forEach((score, index) => {
+                        const li = document.createElement('li');
+                        li.className = 'high-score-item';
+                        li.innerHTML = `
+                            <span class="rank">#${index + 1}</span>
+                            <span>${score.name}</span>
+                            <span>${score.score}/${score.total} (${score.percentage}%)</span>
+                            <span style="color: #999; font-size: 0.9em;">${score.date}</span>
+                        `;
+                        list.appendChild(li);
+                    });
+                }
+            } catch (error) {
+                alert('Error loading high scores: ' + error);
+            }
+        }
+    </script>
+</body>
+</html>
