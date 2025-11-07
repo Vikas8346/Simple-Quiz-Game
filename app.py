@@ -3,6 +3,7 @@ Web-based Quiz Game using Flask
 """
 
 from flask import Flask, render_template, request, jsonify, session
+from flask_cors import CORS
 import json
 import random
 import os
@@ -10,6 +11,7 @@ from datetime import datetime
 import google.generativeai as genai
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 app.secret_key = 'your-secret-key-here-change-in-production'
 
 class QuizGame:
