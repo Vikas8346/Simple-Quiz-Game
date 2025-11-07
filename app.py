@@ -333,5 +333,10 @@ def check_ai_status():
     """Check if AI features are available"""
     return jsonify({'available': game.model is not None, 'error': getattr(game, 'ai_error', None)})
 
+@app.route('/favicon.ico')
+def favicon():
+    """Handle favicon requests to avoid 404 errors"""
+    return '', 204
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
