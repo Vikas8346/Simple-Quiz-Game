@@ -343,13 +343,21 @@
         let totalQuestions = 0;
         let playerName = '';
 
-        // Check AI availability on load
+        // Check AI availability on load and show an error badge if needed
         async function checkAIStatus() {
             try {
                 const response = await fetch('/check-ai-status');
                 const data = await response.json();
+                const btn = document.getElementById('customQuizBtn');
                 if (!data.available) {
-                    document.getElementById('customQuizBtn').innerHTML = 'Play Custom Quiz (AI Not Configured) ⚠️';
+                    btn.innerHTML = 'Play Custom Quiz (AI Not Configured) ⚠️';
+                    if (data.error) {
+                        const badge = document.createElement('div');
+                        badge.className = 'error-message';
+                        badge.textContent = 'AI unavailable: ' + data.error;
+                        // insert the badge below the menu
+                        document.querySelector('.container').insertBefore(badge, document.querySelector('.menu').nextSibling);
+                    }
                 }
             } catch (error) {
                 console.error('Error checking AI status:', error);

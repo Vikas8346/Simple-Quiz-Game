@@ -10,31 +10,45 @@ from datetime import datetime
 import google.generativeai as genai
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
+app.secret_key = 'your-secret-key-here-change-in-production'
 
 class QuizGame:
     def __init__(self):
         self.high_score_file = "high_scores.json"
         self.api_key = None
         self.model = None
+        self.ai_error = None
         self.setup_gemini_api()
     
     def setup_gemini_api(self):
         """Setup Google Gemini API"""
         try:
-            # Try to load API key from environment variable first, then config file
-            self.api_key = os.environ.get('GEMINI_API_KEY')
-            
-            if not self.api_key and os.path.exists("config.json"):
+            self.ai_error = None
+            if os.path.exists("config.json"):
                 with open("config.json", 'r') as f:
                     config = json.load(f)
                     self.api_key = config.get("gemini_api_key")
-            
+
             if self.api_key:
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                try:
+                    # Some accounts / API keys may not have access to certain Gemini models.
+                    # If the model is not found (NOT_FOUND) we'll catch the exception and
+                    # disable AI features while keeping the web app functional.
+                    self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+                    print("✓ Gemini API configured successfully!")
+                except Exception as e:
+                    # Save a helpful error message for diagnostics and UI
+                    err = str(e)
+                    self.ai_error = err
+                    print(f"⚠ Gemini model not available or API error: {err}")
+                    self.model = None
+            else:
+                print("⚠ No API key found. AI question generation will be disabled.")
+                self.model = None
         except Exception as e:
-            print(f"Error setting up Gemini API: {e}")
+            self.ai_error = str(e)
+            print(f"⚠ Error setting up Gemini API: {e}")
             self.model = None
     
     def get_default_questions(self):
@@ -96,6 +110,8 @@ class QuizGame:
     def generate_ai_questions(self, topic, num_questions):
         """Generate questions using Gemini API"""
         if not self.model:
+            # Model is not available; capture a helpful reason if possible
+            print("❌ Gemini API is not configured. Cannot generate AI questions.")
             return None
         
         try:
@@ -133,9 +149,16 @@ Return ONLY the JSON array, no additional text or markdown formatting."""
             response_text = response_text.strip()
             questions = json.loads(response_text)
             return questions
-            
+
+        except json.JSONDecodeError as e:
+            print(f"❌ Error parsing AI response: {e}")
+            self.ai_error = f"AI response not valid JSON: {e}"
+            return None
         except Exception as e:
-            print(f"Error generating questions: {e}")
+            # Capture errors like NOT_FOUND (model not found) or permission issues
+            err = str(e)
+            print(f"❌ Error generating questions: {err}")
+            self.ai_error = err
             return None
     
     def load_high_scores(self):
@@ -304,7 +327,7 @@ def high_scores():
 @app.route('/check-ai-status')
 def check_ai_status():
     """Check if AI features are available"""
-    return jsonify({'available': game.model is not None})
+    return jsonify({'available': game.model is not None, 'error': getattr(game, 'ai_error', None)})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
