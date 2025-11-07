@@ -24,7 +24,11 @@ class QuizGame:
         """Setup Google Gemini API"""
         try:
             self.ai_error = None
-            if os.path.exists("config.json"):
+            # Try to get API key from environment variable first (for Vercel/production)
+            # Then fall back to config.json (for local development)
+            self.api_key = os.environ.get('GEMINI_API_KEY')
+            
+            if not self.api_key and os.path.exists("config.json"):
                 with open("config.json", 'r') as f:
                     config = json.load(f)
                     self.api_key = config.get("gemini_api_key")
